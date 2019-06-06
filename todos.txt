@@ -1,0 +1,17 @@
+TODO's:
+
+- Cloud function & pub/sub version:
+    - implement parser
+    - parser unit test
+    - parser integration test
+    - reuse db connection
+    - add cold start support
+    - load test
+        - 100k
+        - 1M
+        - 10M
+
+- performance, cost, maintenance compare
+- choose right one
+- documentation & deploy guide
+- write article about whole experience

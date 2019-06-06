@@ -1,0 +1,8 @@
+*.swp
+vendor
+logs
+bin
+.env
+.serverless
+.idea
+node_modules
