@@ -10,7 +10,7 @@ import (
 	"log"
 	"os"
 
-	"lambda-push-go/core"
+	"parser/core"
 
 	"github.com/mongodb/mongo-go-driver/bson"
 )

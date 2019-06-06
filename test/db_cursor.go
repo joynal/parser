@@ -6,9 +6,9 @@ import (
 	"github.com/joho/godotenv"
 	"github.com/mongodb/mongo-go-driver/bson"
 	"github.com/mongodb/mongo-go-driver/bson/primitive"
-	"lambda-push-go/core"
 	"log"
 	"os"
+	"parser/core"
 )
 
 func main() {

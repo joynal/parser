@@ -8,9 +8,9 @@ import (
 	"github.com/SherClockHolmes/webpush-go"
 	"github.com/joho/godotenv"
 	"github.com/mongodb/mongo-go-driver/bson"
-	"lambda-push-go/core"
 	"log"
 	"os"
+	"parser/core"
 	"sync"
 	"time"
 )

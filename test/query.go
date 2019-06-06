@@ -9,7 +9,7 @@ import (
 	"os"
 
 	"github.com/mongodb/mongo-go-driver/bson"
-	"lambda-push-go/core"
+	"parser/core"
 )
 
 func main() {
