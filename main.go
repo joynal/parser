@@ -26,6 +26,7 @@ func main() {
 	dbName := os.Getenv("DB_NAME")
 	parserTopic := os.Getenv("PARSER_TOPIC")
 	senderTopic := os.Getenv("SENDER_TOPIC")
+	arraySize := 1000
 
 	// Db connection stuff
 	ctx := context.Background()
@@ -50,13 +51,12 @@ func main() {
 	sub := client.Subscription(parserTopic)
 	cctx, _ := context.WithCancel(ctx)
 	err = sub.Receive(cctx, func(ctx context.Context, msg *pubsub.Message) {
-		msg.Ack()
+		// TODO: uncomment msg ack after test
+		//msg.Ack()
 		err = json.Unmarshal(msg.Data, &notification)
 		if err != nil {
 			fmt.Println(err)
 		}
-
-		fmt.Printf("notification: %v\n", notification)
 
 		// Lets prepare subscriber query
 		query := bson.M{
@@ -99,7 +99,7 @@ func main() {
 
 		// topic configs
 		topic := client.Topic(senderTopic)
-		topic.PublishSettings.CountThreshold = 1000
+		topic.PublishSettings.CountThreshold = 1
 		topic.PublishSettings.DelayThreshold = 3 * time.Second
 
 		// wait group for finishing all goroutines
@@ -107,6 +107,7 @@ func main() {
 		start := time.Now()
 
 		// Iterate through the cursor
+		var subscribers []core.SubscriberPayload
 		for cur.Next(ctx) {
 			var elem core.Subscriber
 			err := cur.Decode(&elem)
@@ -114,31 +115,23 @@ func main() {
 				log.Fatalln("encode err:", err)
 			}
 
-			processed, _ := json.Marshal(core.SubscriberPayload{
+			subscribers = append(subscribers, core.SubscriberPayload{
 				PushEndpoint: elem.PushEndpoint,
 				Data:         string(notificationPayloadStr),
 				Options:      webPushOptions,
 				SubscriberID: elem.ID,
 			})
 
-			result := topic.Publish(ctx, &pubsub.Message{
-				Data: []byte(processed),
-			})
-
-			wg.Add(1)
-			go func(res *pubsub.PublishResult) {
-				defer wg.Done()
-
-				id, err := result.Get(ctx)
-				if err != nil {
-					fmt.Println(err)
-				}
-
-				fmt.Printf("Sent msg ID: %v\n", id)
-			}(result)
-
-			notification.TotalSent++
+			if len(subscribers) == arraySize {
+				wg.Add(1)
+				go sendDataToTopic(subscribers, ctx, topic, wg)
+				notification.TotalSent += arraySize
+			}
 		}
+
+		wg.Add(1)
+		go sendDataToTopic(subscribers, ctx, topic, wg)
+		notification.TotalSent += len(subscribers)
 
 		wg.Wait()
 		fmt.Println("elapsed:", time.Since(start))
@@ -164,4 +157,21 @@ func main() {
 	if err != nil {
 		fmt.Println(err)
 	}
+}
+
+func sendDataToTopic(subscribers []core.SubscriberPayload, ctx context.Context, topic *pubsub.Topic, wg sync.WaitGroup) {
+	defer wg.Done()
+
+	jsonData, _ := json.Marshal(subscribers)
+
+	result := topic.Publish(ctx, &pubsub.Message{
+		Data: []byte(jsonData),
+	})
+	id, err := result.Get(ctx)
+
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	fmt.Printf("Sent msg ID: %v\n", id)
 }
