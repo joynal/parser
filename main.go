@@ -17,7 +17,7 @@ import (
 
 func main() {
 	err := godotenv.Load()
-	if err != nil {
+		if err != nil {
 		log.Fatal("Error loading .env file")
 	}
 
@@ -105,6 +105,7 @@ func main() {
 		// wait group for finishing all goroutines
 		var wg sync.WaitGroup
 		start := time.Now()
+		counter := 0
 
 		// Iterate through the cursor
 		var subscribers []core.SubscriberPayload
@@ -123,15 +124,22 @@ func main() {
 			})
 
 			if len(subscribers) == arraySize {
+				counter++
+				fmt.Println("called from inside: ", counter)
 				wg.Add(1)
 				go sendDataToTopic(subscribers, ctx, topic, wg)
 				notification.TotalSent += arraySize
+				subscribers = nil
 			}
 		}
 
-		wg.Add(1)
-		go sendDataToTopic(subscribers, ctx, topic, wg)
-		notification.TotalSent += len(subscribers)
+		if len(subscribers) > 0 {
+			fmt.Println("called from outside: ", counter)
+			wg.Add(1)
+			go sendDataToTopic(subscribers, ctx, topic, wg)
+			notification.TotalSent += len(subscribers)
+			subscribers = nil
+		}
 
 		wg.Wait()
 		fmt.Println("elapsed:", time.Since(start))
