@@ -51,8 +51,7 @@ func main() {
 	sub := client.Subscription(parserTopic)
 	cctx, _ := context.WithCancel(ctx)
 	err = sub.Receive(cctx, func(ctx context.Context, msg *pubsub.Message) {
-		// TODO: uncomment msg ack after test
-		//msg.Ack()
+		msg.Ack()
 		err = json.Unmarshal(msg.Data, &notification)
 		if err != nil {
 			fmt.Println(err)
@@ -160,10 +159,9 @@ func main() {
 		}
 
 		notificationCol := db.Collection("notifications")
-		res, _ := notificationCol.UpdateOne(ctx, bson.M{"_id": notification.ID}, bson.M{"$set": updateQuery})
-
-		fmt.Println("notification update: ", res)
+		_, _ = notificationCol.UpdateOne(ctx, bson.M{"_id": notification.ID}, bson.M{"$set": updateQuery})
 	})
+
 	if err != nil {
 		fmt.Println(err)
 	}
