@@ -127,7 +127,7 @@ func main() {
 				counter++
 				fmt.Println("called from inside: ", counter)
 				wg.Add(1)
-				go sendDataToTopic(subscribers, ctx, topic, wg)
+				go sendDataToTopic(subscribers, ctx, topic, &wg)
 				notification.TotalSent += arraySize
 				subscribers = nil
 			}
@@ -136,7 +136,7 @@ func main() {
 		if len(subscribers) > 0 {
 			fmt.Println("called from outside: ", counter)
 			wg.Add(1)
-			go sendDataToTopic(subscribers, ctx, topic, wg)
+			go sendDataToTopic(subscribers, ctx, topic, &wg)
 			notification.TotalSent += len(subscribers)
 			subscribers = nil
 		}
@@ -151,7 +151,7 @@ func main() {
 		// stop all topic's go routines
 		topic.Stop()
 
-		// finish the recursion & update notification
+		// update notification stats
 		updateQuery := bson.M{"updatedAt": time.Now()}
 		updateQuery["totalSent"] = notification.TotalSent
 
@@ -160,14 +160,16 @@ func main() {
 		}
 
 		notificationCol := db.Collection("notifications")
-		_, _ = notificationCol.UpdateOne(ctx, bson.M{"_id": notification.ID}, bson.M{"$set": updateQuery})
+		res, _ := notificationCol.UpdateOne(ctx, bson.M{"_id": notification.ID}, bson.M{"$set": updateQuery})
+
+		fmt.Println("notification update: ", res)
 	})
 	if err != nil {
 		fmt.Println(err)
 	}
 }
 
-func sendDataToTopic(subscribers []core.SubscriberPayload, ctx context.Context, topic *pubsub.Topic, wg sync.WaitGroup) {
+func sendDataToTopic(subscribers []core.SubscriberPayload, ctx context.Context, topic *pubsub.Topic, wg *sync.WaitGroup) {
 	defer wg.Done()
 
 	jsonData, _ := json.Marshal(subscribers)
