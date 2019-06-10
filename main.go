@@ -99,7 +99,7 @@ func main() {
 		// topic configs
 		topic := client.Topic(senderTopic)
 		topic.PublishSettings.CountThreshold = 1
-		topic.PublishSettings.DelayThreshold = 3 * time.Second
+		topic.PublishSettings.DelayThreshold = 2 * time.Second
 
 		// wait group for finishing all goroutines
 		var wg sync.WaitGroup
@@ -128,6 +128,7 @@ func main() {
 				wg.Add(1)
 				go sendDataToTopic(subscribers, ctx, topic, &wg)
 				notification.TotalSent += arraySize
+				// clean subscribers array
 				subscribers = nil
 			}
 		}
@@ -182,4 +183,6 @@ func sendDataToTopic(subscribers []core.SubscriberPayload, ctx context.Context, 
 	}
 
 	fmt.Printf("Sent msg ID: %v\n", id)
+	// add throttling, so buffer limit do not exist
+	time.Sleep(2 * time.Second)
 }

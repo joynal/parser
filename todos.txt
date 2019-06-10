@@ -1,6 +1,7 @@
 TODO's:
 
 - proper tweak parser
+- add throttling
 - add unit test
 - add integration test
 - optimize db connection
