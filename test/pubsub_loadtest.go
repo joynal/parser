@@ -29,7 +29,7 @@ func main() {
 	topic := client.Topic(senderTopic)
 	topic.PublishSettings.DelayThreshold = 1 * time.Second
 	topic.PublishSettings.CountThreshold = 1
-	topic.PublishSettings.ByteThreshold = 3000000
+	topic.PublishSettings.ByteThreshold = 3e6
 
 	// stop all topic's go routines
 	defer topic.Stop()
