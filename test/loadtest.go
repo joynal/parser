@@ -1,7 +1,6 @@
 package main
 
 import (
-	"cloud.google.com/go/pubsub"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -9,6 +8,8 @@ import (
 	"os"
 	"sync"
 	"time"
+
+	"cloud.google.com/go/pubsub"
 )
 
 func main() {
@@ -26,30 +27,26 @@ func main() {
 	defer topic.Stop()
 
 	// topic settings
-	topic.PublishSettings.DelayThreshold = 1 * time.Second
-	topic.PublishSettings.CountThreshold = 1
+	topic.PublishSettings.DelayThreshold = 1 * time.Millisecond
+	topic.PublishSettings.CountThreshold = 1000
 	topic.PublishSettings.ByteThreshold = 2e6
 
 	// wait group for finishing all goroutines
 	var wg sync.WaitGroup
 	defer wg.Wait()
 
-	var notifications []string
 	for i := 0; i < 1000000; i++ {
-		notifications = append(notifications, largeJsonObjectStr)
-
-		if len(notifications) == 1000 {
-			wg.Add(1)
-			go sendDataToTopic(notifications, ctx, topic, &wg)
-			notifications = nil
-		}
+		wg.Add(1)
+		go sendDataToTopic(largeJsonObjectStr, ctx, topic, &wg)
+		// add throttling, so buffered limit do not cross
+		time.Sleep(1 * time.Millisecond)
 	}
 }
 
-func sendDataToTopic(notifications []string, ctx context.Context, topic *pubsub.Topic, wg *sync.WaitGroup) {
+func sendDataToTopic(notification string, ctx context.Context, topic *pubsub.Topic, wg *sync.WaitGroup) {
 	defer wg.Done()
 
-	jsonData, _ := json.Marshal(notifications)
+	jsonData, _ := json.Marshal(notification)
 
 	fmt.Println("number of bytes: ", len(jsonData))
 
@@ -63,9 +60,6 @@ func sendDataToTopic(notifications []string, ctx context.Context, topic *pubsub.
 	}
 
 	fmt.Printf("Sent msg ID: %v\n", id)
-
-	// add throttling, so buffered limit do not cross
-	time.Sleep(1 * time.Second)
 }
 
 var largeJsonObjectStr = `{
