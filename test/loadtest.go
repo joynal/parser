@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"log"
 	"os"
@@ -26,33 +25,31 @@ func main() {
 	topic := client.Topic(senderTopic)
 	defer topic.Stop()
 
-	// topic settings
-	topic.PublishSettings.DelayThreshold = 1 * time.Millisecond
-	topic.PublishSettings.CountThreshold = 1000
-	topic.PublishSettings.ByteThreshold = 2e6
-
 	// wait group for finishing all goroutines
 	var wg sync.WaitGroup
-	defer wg.Wait()
+	// defer wg.Wait()
+	start := time.Now()
 
 	for i := 0; i < 1000000; i++ {
+		result := topic.Publish(ctx, &pubsub.Message{
+			Data: []byte(largeJsonObjectStr),
+		})
+
 		wg.Add(1)
-		go sendDataToTopic(largeJsonObjectStr, ctx, topic, &wg)
+		go getResult(result, ctx, &wg)
+
 		// add throttling, so buffered limit do not cross
 		time.Sleep(1 * time.Millisecond)
 	}
+
+	wg.Wait()
+
+	fmt.Println("elapsed:", time.Since(start))
 }
 
-func sendDataToTopic(notification string, ctx context.Context, topic *pubsub.Topic, wg *sync.WaitGroup) {
+func getResult(result *pubsub.PublishResult, ctx context.Context, wg *sync.WaitGroup) {
 	defer wg.Done()
 
-	jsonData, _ := json.Marshal(notification)
-
-	fmt.Println("number of bytes: ", len(jsonData))
-
-	result := topic.Publish(ctx, &pubsub.Message{
-		Data: []byte(jsonData),
-	})
 	id, err := result.Get(ctx)
 
 	if err != nil {
