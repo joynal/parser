@@ -1,0 +1,42 @@
+{
+    "_id" : "5c82455744cd0f069b35daa6",
+    "priority" : "high",
+    "timeToLive" : 259200,
+    "totalSent" : 55,
+    "totalDeliver" : 0,
+    "totalShow" : 0,
+    "totalError" : 0,
+    "totalClick" : 0,
+    "totalClose" : 0,
+    "isAtLocalTime" : false,
+    "isProcessed" : "done",
+    "isSchedule" : true,
+    "timezonesCompleted" : [],
+    "isDeleted" : false,
+    "receivers" : [],
+    "actions" : [],
+    "fromRSSFeed" : false,
+    "siteId" : "5c82424627ff1506951b7fbb",
+    "messages" : [
+        {
+            "_id" : "5c82455744cd0f069b35daa7",
+            "title" : "Load test, pls ignore - 1",
+            "message" : "Load test, pls ignore - 1",
+            "language" : "en"
+        }
+    ],
+    "browsers" : [
+        {
+            "iconUrl" : "https://cdn.testsite.com/assets/img/logo.png",
+            "imageUrl" : "",
+            "badge" : "",
+            "vibration" : false,
+            "isActive" : true,
+            "isEnabledCTAButton" : false,
+            "browserName" : "chrome"
+        }
+    ],
+    "launchUrl" : "https://joynal.github.io",
+    "userId" : "5c82424427ff1506951b7fb8",
+    "sentAt" : "2019-03-29T16:34:00.040Z"
+}

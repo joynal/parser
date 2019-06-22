@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"os"
 	"sync"
@@ -25,21 +26,29 @@ func main() {
 	topic := client.Topic(senderTopic)
 	defer topic.Stop()
 
+	// TODO: find out correct BufferedByteLimit
+	// TODO: find out correct way to throttle
+
+	topic.PublishSettings.CountThreshold = 1000
+	topic.PublishSettings.BufferedByteLimit = 2e9
+
 	// wait group for finishing all goroutines
 	var wg sync.WaitGroup
 	// defer wg.Wait()
 	start := time.Now()
 
+	largeJsonObjectStr, _ := ioutil.ReadFile("./test/message.json")
+
 	for i := 0; i < 1000000; i++ {
 		result := topic.Publish(ctx, &pubsub.Message{
-			Data: []byte(largeJsonObjectStr),
+			Data: largeJsonObjectStr,
 		})
 
 		wg.Add(1)
 		go getResult(result, ctx, &wg)
 
 		// add throttling, so buffered limit do not cross
-		time.Sleep(1 * time.Millisecond)
+		// time.Sleep(1 * time.Millisecond)
 	}
 
 	wg.Wait()
@@ -53,51 +62,8 @@ func getResult(result *pubsub.PublishResult, ctx context.Context, wg *sync.WaitG
 	id, err := result.Get(ctx)
 
 	if err != nil {
-		fmt.Println(err)
+		fmt.Println("err: ", err)
 	}
 
 	fmt.Printf("Sent msg ID: %v\n", id)
 }
-
-var largeJsonObjectStr = `{
-    "_id" : "5c82455744cd0f069b35daa6",
-    "priority" : "high",
-    "timeToLive" : 259200,
-    "totalSent" : 55,
-    "totalDeliver" : 0,
-    "totalShow" : 0,
-    "totalError" : 0,
-    "totalClick" : 0,
-    "totalClose" : 0,
-    "isAtLocalTime" : false,
-    "isProcessed" : "done",
-    "isSchedule" : true,
-    "timezonesCompleted" : [],
-    "isDeleted" : false,
-    "receivers" : [],
-    "actions" : [],
-    "fromRSSFeed" : false,
-    "siteId" : "5c82424627ff1506951b7fbb",
-    "messages" : [
-        {
-            "_id" : "5c82455744cd0f069b35daa7",
-            "title" : "Load test, pls ignore - 1",
-            "message" : "Load test, pls ignore - 1",
-            "language" : "en"
-        }
-    ],
-    "browsers" : [
-        {
-            "iconUrl" : "https://cdn.testsite.com/assets/img/logo.png",
-            "imageUrl" : "",
-            "badge" : "",
-            "vibration" : false,
-            "isActive" : true,
-            "isEnabledCTAButton" : false,
-            "browserName" : "chrome"
-        }
-    ],
-    "launchUrl" : "https://joynal.github.io",
-    "userId" : "5c82424427ff1506951b7fb8",
-    "sentAt" : "2019-03-29T16:34:00.040Z"
-}`
