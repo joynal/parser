@@ -96,7 +96,6 @@ type ProcessedNotification struct {
 	Browser       []Browser
 	Actions       Action
 	HideRules     HideRule     `bson:"hideRules"`
-	TotalSent     int          `bson:"totalSent"`
 	SendTo        SendTo       `bson:"sendTo"`
 	IsAtLocalTime bool         `bson:"isAtLocalTime"`
 	VapidDetails  VapidDetails `bson:"vapidDetails"`

@@ -51,6 +51,7 @@ func main() {
 	var notification core.ProcessedNotification
 	sub := client.Subscription(parserTopic)
 	cctx, _ := context.WithCancel(ctx)
+
 	err = sub.Receive(cctx, func(ctx context.Context, msg *pubsub.Message) {
 		msg.Ack()
 		err = json.Unmarshal(msg.Data, &notification)
@@ -104,6 +105,7 @@ func main() {
 
 		// wait group for finishing all goroutines
 		var wg sync.WaitGroup
+		counter := 0
 
 		// Iterate through the cursor
 		for cur.Next(ctx) {
@@ -120,7 +122,7 @@ func main() {
 				Options:      webPushOptions,
 				SubscriberID: elem.ID,
 			}, ctx, topic, &wg)
-			notification.TotalSent++
+			counter++
 		}
 
 		wg.Wait()
@@ -134,7 +136,7 @@ func main() {
 
 		// update notification stats
 		updateQuery := bson.M{"updatedAt": time.Now()}
-		updateQuery["totalSent"] = notification.TotalSent
+		updateQuery["totalSent"] = counter
 
 		if notification.IsAtLocalTime == false {
 			updateQuery["isProcessed"] = "done"
