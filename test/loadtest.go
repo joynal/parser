@@ -26,9 +26,6 @@ func main() {
 	topic := client.Topic(senderTopic)
 	defer topic.Stop()
 
-	// TODO: find out correct BufferedByteLimit
-	// TODO: find out correct way to throttle
-
 	topic.PublishSettings.CountThreshold = 1000
 	topic.PublishSettings.BufferedByteLimit = 2e9
 
