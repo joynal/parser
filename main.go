@@ -1,24 +1,26 @@
 package main
 
 import (
-	"cloud.google.com/go/pubsub"
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/SherClockHolmes/webpush-go"
-	"github.com/joho/godotenv"
-	"github.com/mongodb/mongo-go-driver/bson"
 	"log"
 	"os"
 	"parser/core"
 	"sync"
 	"time"
+
+	"cloud.google.com/go/pubsub"
+	"github.com/SherClockHolmes/webpush-go"
+	"github.com/joho/godotenv"
+	"github.com/mongodb/mongo-go-driver/bson"
 )
 
 func main() {
+	start := time.Now()
 	err := godotenv.Load()
-		if err != nil {
-		log.Fatal("Error loading .env file")
+	if err != nil {
+		log.Fatal("error loading .env file")
 	}
 
 	// prepare configs
@@ -26,7 +28,6 @@ func main() {
 	dbName := os.Getenv("DB_NAME")
 	parserTopic := os.Getenv("PARSER_TOPIC")
 	senderTopic := os.Getenv("SENDER_TOPIC")
-	arraySize := 1000
 
 	// Db connection stuff
 	ctx := context.Background()
@@ -69,7 +70,7 @@ func main() {
 		}
 
 		webPushOptions := webpush.Options{
-			Subscriber:      "https://omnikick.com/",
+			Subscriber:      "https://joynal.com/",
 			VAPIDPublicKey:  notification.VapidDetails.VapidPublicKeys,
 			VAPIDPrivateKey: notification.VapidDetails.VapidPrivateKeys,
 			TTL:             notification.TimeToLive,
@@ -98,16 +99,13 @@ func main() {
 
 		// topic configs
 		topic := client.Topic(senderTopic)
-		topic.PublishSettings.CountThreshold = 1
-		topic.PublishSettings.DelayThreshold = 2 * time.Second
+		topic.PublishSettings.CountThreshold = 1000
+		topic.PublishSettings.BufferedByteLimit = 2e9
 
 		// wait group for finishing all goroutines
 		var wg sync.WaitGroup
-		start := time.Now()
-		counter := 0
 
 		// Iterate through the cursor
-		var subscribers []core.SubscriberPayload
 		for cur.Next(ctx) {
 			var elem core.Subscriber
 			err := cur.Decode(&elem)
@@ -115,34 +113,17 @@ func main() {
 				log.Fatalln("encode err:", err)
 			}
 
-			subscribers = append(subscribers, core.SubscriberPayload{
+			wg.Add(1)
+			go sendDataToTopic(core.SubscriberPayload{
 				PushEndpoint: elem.PushEndpoint,
 				Data:         string(notificationPayloadStr),
 				Options:      webPushOptions,
 				SubscriberID: elem.ID,
-			})
-
-			if len(subscribers) == arraySize {
-				counter++
-				fmt.Println("called from inside: ", counter)
-				wg.Add(1)
-				go sendDataToTopic(subscribers, ctx, topic, &wg)
-				notification.TotalSent += arraySize
-				// clean subscribers array
-				subscribers = nil
-			}
-		}
-
-		if len(subscribers) > 0 {
-			fmt.Println("called from outside: ", counter)
-			wg.Add(1)
-			go sendDataToTopic(subscribers, ctx, topic, &wg)
-			notification.TotalSent += len(subscribers)
-			subscribers = nil
+			}, ctx, topic, &wg)
+			notification.TotalSent++
 		}
 
 		wg.Wait()
-		fmt.Println("elapsed:", time.Since(start))
 
 		if err := cur.Err(); err != nil {
 			log.Fatal(err)
@@ -161,6 +142,8 @@ func main() {
 
 		notificationCol := db.Collection("notifications")
 		_, _ = notificationCol.UpdateOne(ctx, bson.M{"_id": notification.ID}, bson.M{"$set": updateQuery})
+
+		fmt.Println("elapsed:", time.Since(start))
 	})
 
 	if err != nil {
@@ -168,10 +151,10 @@ func main() {
 	}
 }
 
-func sendDataToTopic(subscribers []core.SubscriberPayload, ctx context.Context, topic *pubsub.Topic, wg *sync.WaitGroup) {
+func sendDataToTopic(subscriber core.SubscriberPayload, ctx context.Context, topic *pubsub.Topic, wg *sync.WaitGroup) {
 	defer wg.Done()
 
-	jsonData, _ := json.Marshal(subscribers)
+	jsonData, _ := json.Marshal(subscriber)
 
 	result := topic.Publish(ctx, &pubsub.Message{
 		Data: []byte(jsonData),
@@ -179,10 +162,8 @@ func sendDataToTopic(subscribers []core.SubscriberPayload, ctx context.Context, 
 	id, err := result.Get(ctx)
 
 	if err != nil {
-		fmt.Println(err)
+		fmt.Println("err: ", err)
 	}
 
 	fmt.Printf("Sent msg ID: %v\n", id)
-	// add throttling, so buffer limit do not exist
-	time.Sleep(2 * time.Second)
 }
