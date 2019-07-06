@@ -14,3 +14,10 @@ TODO's:
 - choose right one
 - documentation & deploy guide
 - write article about whole experience
+
+* Site subscriber amount
+    - 5c17804f2cbefa06ade61d64 - 2k
+    - 5c82424627ff1506951b7fbb - 1M
+    - 5d203e46c4a197507a594df6 - 2M
+    - 5d203e46c4a197b550594df7 - 5M
+    - 5d203e46c4a197b550594df8 - 10M

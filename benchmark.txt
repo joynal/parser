@@ -1,3 +1,9 @@
 * pubsub load test:
     - 1m31s
     - 1m38s
+
+* parser - 500k
+    - 1m13.389131044s
+* parser - 1M
+    - 1m44.952597191s
+    - 1m25.106288092s
