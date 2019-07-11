@@ -94,7 +94,7 @@ type ProcessedNotification struct {
 	LaunchURL     string             `bson:"launchUrl"`
 	Message       Message
 	Browser       []Browser
-	Actions       Action
+	Actions       []Action
 	HideRules     HideRule     `bson:"hideRules"`
 	SendTo        SendTo       `bson:"sendTo"`
 	IsAtLocalTime bool         `bson:"isAtLocalTime"`
@@ -108,7 +108,7 @@ type NotificationPayload struct {
 	Message   Message
 	Browser   []Browser
 	HideRules HideRule `bson:"hideRules"`
-	Actions   Action
+	Actions   []Action
 }
 
 type VapidDetails struct {

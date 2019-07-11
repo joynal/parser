@@ -53,7 +53,15 @@ func main() {
 	cctx, _ := context.WithCancel(ctx)
 
 	err = sub.Receive(cctx, func(ctx context.Context, msg *pubsub.Message) {
+		// confirm that message received
 		msg.Ack()
+
+		// topic configs
+		topic := client.Topic(senderTopic)
+		topic.PublishSettings.CountThreshold = 1000
+		topic.PublishSettings.BufferedByteLimit = 2e9
+
+		// convert json to object
 		err = json.Unmarshal(msg.Data, &notification)
 		if err != nil {
 			fmt.Println(err)
@@ -87,7 +95,6 @@ func main() {
 		}
 
 		notificationPayloadStr, _ := json.Marshal(notificationPayload)
-
 		subscriberCol := db.Collection("notificationsubscribers")
 
 		// find subscribers and
@@ -97,11 +104,6 @@ func main() {
 		}
 		// Close the cursor once finished
 		defer cur.Close(ctx)
-
-		// topic configs
-		topic := client.Topic(senderTopic)
-		topic.PublishSettings.CountThreshold = 1000
-		topic.PublishSettings.BufferedByteLimit = 2e9
 
 		// wait group for finishing all goroutines
 		var wg sync.WaitGroup
@@ -149,20 +151,18 @@ func main() {
 	})
 
 	if err != nil {
-		fmt.Println(err)
+		fmt.Println("topic receive error: ", err)
 	}
 }
 
 func sendDataToTopic(subscriber core.SubscriberPayload, ctx context.Context, topic *pubsub.Topic, wg *sync.WaitGroup) {
 	defer wg.Done()
-
 	jsonData, _ := json.Marshal(subscriber)
-
 	result := topic.Publish(ctx, &pubsub.Message{
 		Data: []byte(jsonData),
 	})
-	id, err := result.Get(ctx)
 
+	id, err := result.Get(ctx)
 	if err != nil {
 		fmt.Println("err: ", err)
 	}

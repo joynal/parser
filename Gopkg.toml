@@ -24,25 +24,22 @@
 #   go-tests = true
 #   unused-packages = true
 
-[[constraint]]
-  name = "github.com/mongodb/mongo-go-driver"
-  version = "0.3.0"
 
 [[constraint]]
-  name = "github.com/onsi/ginkgo"
-  version = "1.8.0"
-
-[[constraint]]
-  name = "github.com/onsi/gomega"
-  version = "1.5.0"
+  name = "cloud.google.com/go"
+  version = "0.41.0"
 
 [[constraint]]
   name = "github.com/SherClockHolmes/webpush-go"
   version = "1.1.0"
 
-[[override]]
-  name = "gopkg.in/fsnotify.v1"
-  source = "gopkg.in/fsnotify/fsnotify.v1"
+[[constraint]]
+  name = "github.com/joho/godotenv"
+  version = "1.3.0"
+
+[[constraint]]
+  name = "github.com/mongodb/mongo-go-driver"
+  version = "0.3.0"
 
 [prune]
   go-tests = true
